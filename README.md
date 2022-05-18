@@ -2,6 +2,9 @@
 
 This Project is a fork of Ethereum Boilerplate and demostrates how you can build your own NFT Marketplace. This project of course work on any EVM-compatible blockchain such as Polygon, Avalanche, Binance Smart Chain and other such chains.
 
+![image](https://user-images.githubusercontent.com/25018500/169044787-ac6581e8-0df1-41af-b6e7-5825faf95558.png)
+
+
 ![Preview](preview.gif)
 
 # ⭐️ `Star us`
