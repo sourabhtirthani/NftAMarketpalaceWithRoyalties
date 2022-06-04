@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import bigInt from "big-integer";
 import { getNativeByChain } from "helpers/networks";
 import { getCollectionsByChain } from "helpers/collections";
 import {
@@ -63,12 +64,11 @@ function NFTTokenIds({ inputValue, setInputValue }) {
   const [nftToBuy, setNftToBuy] = useState(null);
   const [loading, setLoading] = useState(false);
   const contractProcessor = useWeb3ExecuteFunction();
-  const { chainId, marketAddress, contractABI, walletAddress } =
-    useMoralisDapp();
+  const { chainId, marketAddress, contractABI, walletAddress,demotokenAddress,demoToken,marketPlaceBoilerAddress,marketPlaceBoilerABI,marketABI } =useMoralisDapp();
   const nativeName = getNativeByChain(chainId);
   const contractABIJson = JSON.parse(contractABI);
   const { Moralis } = useMoralis();
-  const queryMarketItems = useMoralisQuery("MarketItems");
+  const queryMarketItems = useMoralisQuery("createdMarketItems");
   const fetchMarketItems = JSON.parse(
     JSON.stringify(queryMarketItems.data, [
       "objectId",
@@ -81,6 +81,9 @@ function NFTTokenIds({ inputValue, setInputValue }) {
       "seller",
       "owner",
       "confirmed",
+      "NFTtype",
+      "nounce",
+      "r","s","v"
     ])
   );
   const purchaseItemFunction = "createMarketSale";
@@ -89,17 +92,40 @@ function NFTTokenIds({ inputValue, setInputValue }) {
   async function purchase() {
     setLoading(true);
     const tokenDetails = getMarketItem(nftToBuy);
-    const itemID = tokenDetails.itemId;
-    const tokenPrice = tokenDetails.price;
+    const itemID = tokenDetails.tokenId;
+    let tokenPrice = tokenDetails.price;
+    const owner=tokenDetails.owner;
+    const token=tokenDetails.nftContract;
+    const nounce=tokenDetails.nounce_decimal;
+
+    tokenPrice=tokenPrice*1000000000000000000;
+    console.log("nounce: ", tokenDetails.nounce)
+    console.log("expiry: ", (Math.floor(Date.now() / 1000)+86400*60))
+    console.log("signerWallet: ", owner)
+    console.log("signerToken: ", token)
+    console.log("signerID: ", itemID)
+    console.log("senderToken: ", demotokenAddress)
+    console.log("senderAmount: ", bigInt(tokenPrice).toString())
+    console.log("v",tokenDetails.v);
+    console.log("r",tokenDetails.r);
+    console.log("s",tokenDetails.s);
     const ops = {
       contractAddress: marketAddress,
-      functionName: purchaseItemFunction,
-      abi: contractABIJson,
+      functionName: "buyNFT",
+      abi: JSON.parse(marketABI),
       params: {
-        nftContract: nftToBuy.token_address,
-        itemId: itemID,
+        nonce:tokenDetails.nounce,
+        expiry: (Math.floor(Date.now() / 1000)+86400*60),
+        signerWallet:owner,
+        signerToken:token,
+        signerID:itemID,
+        senderToken:demotokenAddress,
+        senderAmount:bigInt(tokenPrice).toString(),
+        v:tokenDetails.v,
+        r:tokenDetails.r,
+        s:tokenDetails.s,
       },
-      msgValue: tokenPrice,
+      msgValue: 0,
     };
 
     await contractProcessor.fetch({
@@ -112,6 +138,105 @@ function NFTTokenIds({ inputValue, setInputValue }) {
         succPurchase();
       },
       onError: (error) => {
+        console.log("error",error);
+        setLoading(false);
+        failPurchase();
+      },
+    });
+  }
+  async function tokenTransfer() {
+    setLoading(true);
+    const tokenDetails = getMarketItem(nftToBuy);
+
+    const itemID = tokenDetails.itemId;
+    let price = tokenDetails.price;
+    price=price*1000000000000000000;
+    console.log(demotokenAddress,"demotokenAddress");
+    console.log(itemID,"itemID");
+    console.log(price,"Price");
+    const ops = {
+      contractAddress: marketPlaceBoilerAddress,
+      functionName: "createMarketSale",
+      abi: JSON.parse(marketPlaceBoilerABI),
+      params: {
+        token: demotokenAddress,
+        itemId: itemID,
+        amount:bigInt(price).toString()
+      },
+    };
+
+    await contractProcessor.fetch({
+      params: ops,
+      onSuccess: () => {
+        console.log("success token transfer");
+        setLoading(false);
+        approveToken(marketAddress);
+        setVisibility(false);
+        updateSoldMarketItem();
+        succPurchase();
+      },
+      onError: (error) => {
+        console.log(error);
+        setLoading(false);
+        failPurchase();
+      },
+    });
+  }
+  async function authenticate(){
+    let nounce= Math.floor(Math.random() * 10000000);
+    let message="Nounce: "+nounce +"Hello You Are About to sign a transaction ";
+    
+    var user = await Moralis.Web3.authenticate({ signingMessage: message });
+    let signature= user.get("authData");
+    let sig=signature.moralisEth.signature
+    console.log(sig);
+    let signaturenew = sig.slice(2, 132)
+    var r = `${signaturenew.slice(0, 64)}`
+    var s = `0x${signaturenew.slice(64, 128)}`
+    var v =  parseInt(signaturenew.slice(128, 130), 16) %2 + 27;
+    console.log(r,"r");
+    console.log(s,"s");
+    console.log(v,"v");
+    purchase(v,r,s,nounce);
+  }
+  async function approveToken() {
+    console.log("TOken Approve function called");
+    setLoading(true);
+    console.log(nftToBuy);
+    const tokenDetails = getMarketItem(nftToBuy);
+    console.log(tokenDetails);
+    const itemID = tokenDetails.itemId;
+    const tokenPrice = tokenDetails.price;
+    let contract_type=marketPlaceBoilerAddress;
+    if(tokenDetails.NFTtype!="ERC1155"){
+      contract_type=marketAddress
+    }
+    console.log("tokenDetails",tokenDetails);
+    const ops = {
+      contractAddress: demotokenAddress,
+      functionName: "approve",
+      abi: JSON.parse(demoToken),
+      params: {
+        spender: contract_type,
+        amount: String(tokenPrice),
+      },
+    };
+
+    await contractProcessor.fetch({
+      params: ops,
+      onSuccess: () => {
+        console.log(tokenDetails.NFTtype);
+        if(tokenDetails.NFTtype=="ERC721"){
+          
+          purchase();
+        }else{
+          tokenTransfer();
+        }
+        setLoading(false);
+        setVisibility(false);
+      },
+      onError: (error) => {
+        console.log(error);
         setLoading(false);
         failPurchase();
       },
@@ -119,6 +244,7 @@ function NFTTokenIds({ inputValue, setInputValue }) {
   }
 
   const handleBuyClick = (nft) => {
+    console.log("NFT",nft);
     setNftToBuy(nft);
     console.log(nft.image);
     setVisibility(true);
@@ -134,7 +260,7 @@ function NFTTokenIds({ inputValue, setInputValue }) {
       modal.destroy();
     }, secondsToGo * 1000);
   }
-
+  
   function failPurchase() {
     let secondsToGo = 5;
     const modal = Modal.error({
@@ -246,7 +372,7 @@ function NFTTokenIds({ inputValue, setInputValue }) {
             ))}
 
           {inputValue !== "explore" &&
-            NFTTokenIds.slice(0, 20).map((nft, index) => (
+            NFTTokenIds.slice(0, 40).map((nft, index) => (
               <Card
                 hoverable
                 actions={[
@@ -283,12 +409,15 @@ function NFTTokenIds({ inputValue, setInputValue }) {
               </Card>
             ))}
         </div>
-        {getMarketItem(nftToBuy) ? (
+        {
+          getMarketItem(nftToBuy) ? (
           <Modal
             title={`Buy ${nftToBuy?.name} #${nftToBuy?.token_id}`}
             visible={visible}
             onCancel={() => setVisibility(false)}
-            onOk={() => purchase()}
+            onOk={() => 
+            approveToken()
+            }
             okText="Buy"
           >
             <Spin spinning={loading}>
@@ -301,8 +430,8 @@ function NFTTokenIds({ inputValue, setInputValue }) {
                 <Badge.Ribbon
                   color="green"
                   text={`${
-                    getMarketItem(nftToBuy).price / ("1e" + 18)
-                  } ${nativeName}`}
+                    getMarketItem(nftToBuy).price
+                  } DMEO`}
                 >
                   <img
                     src={nftToBuy?.image}

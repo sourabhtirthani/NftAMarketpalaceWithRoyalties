@@ -32,6 +32,24 @@ export const networkCollections = {
       name: "The Nona",
       addrs: "0xa512ccd585e44d4b8ad3d2a391167eb079ac5cf3",
     },
+    {
+      image:
+      "https://gateway.pinata.cloud/ipfs/QmNWe1ym9pyv15ALer4PYzgCPqYLxVHr9QEHCmybFiXPCG/6.jpg",
+    name: "Manalisa",
+    addrs: "0x94e0990FF4071E1aa14979A5bAF747D12bdfD024",
+    },
+    {
+      image:
+      "https://gateway.pinata.cloud/ipfs/QmNWe1ym9pyv15ALer4PYzgCPqYLxVHr9QEHCmybFiXPCG/6.jpg",
+    name: "Nost Apes",
+    addrs: "0x15086669ae578ac185538f57ff697cd1da4dc61e",
+    },
+    {
+      image:
+      "https://gateway.pinata.cloud/ipfs/QmNWe1ym9pyv15ALer4PYzgCPqYLxVHr9QEHCmybFiXPCG/6.jpg",
+    name: "Picaso NFT",
+    addrs: "0x837faccD6133BF91D631F9f20a4A6F7d06480336",
+    }  
   ],
 
   "0x2a": [

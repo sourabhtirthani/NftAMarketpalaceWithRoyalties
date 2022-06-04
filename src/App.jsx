@@ -19,7 +19,7 @@ import "./style.css";
 import Text from "antd/lib/typography/Text";
 import NFTMarketTransactions from "components/NFTMarketTransactions";
 const { Header, Footer } = Layout;
-
+ 
 const styles = {
   content: {
     display: "flex",

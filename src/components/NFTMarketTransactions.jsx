@@ -24,7 +24,7 @@ function NFTMarketTransactions() {
       "image",
     ])
   );
-  const queryMarketItems = useMoralisQuery("MarketItems");
+  const queryMarketItems = useMoralisQuery("createdMarketItem");
   const fetchMarketItems = JSON.parse(
     JSON.stringify(queryMarketItems.data, [
       "updatedAt",
@@ -136,7 +136,7 @@ function NFTMarketTransactions() {
     collection: item.nftContract,
     item: item.tokenId,
     tags: [item.seller, item.sold],
-    price: item.price / ("1e" + 18)
+    price: item.price 
   }));
 
   return (

@@ -21,6 +21,12 @@ export const useNFTBalance = (options) => {
       const NFTs = data.result;
       setFetchSuccess(true);
       for (let NFT of NFTs) {
+       
+        if(NFT.contract_type=="ERC721"){
+            console.log("ERC721");
+        }else{
+            console.log("ERC1155");
+        }
         if (NFT?.metadata) {
           NFT.metadata = JSON.parse(NFT.metadata);
           NFT.image = resolveLink(NFT.metadata?.image);

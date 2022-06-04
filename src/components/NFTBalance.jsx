@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useMoralis } from "react-moralis";
 import { Card, Image, Tooltip, Modal, Input, Alert, Spin, Button } from "antd";
 import { useNFTBalance } from "hooks/useNFTBalance";
+import bytes32 from "bytes32";
 import { FileSearchOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { useMoralisDapp } from "providers/MoralisDappProvider/MoralisDappProvider";
 import { getExplorer } from "helpers/networks";
@@ -22,31 +23,40 @@ const styles = {
 
 function NFTBalance() {
   const { NFTBalance, fetchSuccess } = useNFTBalance();
-  const { chainId, marketAddress, contractABI } = useMoralisDapp();
+  const { chainId, marketAddress, contractABI,marketPlaceBoilerAddress,marketPlaceBoilerABI,ERC721ABI} = useMoralisDapp();
   const { Moralis } = useMoralis();
   const [visible, setVisibility] = useState(false);
   const [nftToSend, setNftToSend] = useState(null);
   const [price, setPrice] = useState(1);
   const [loading, setLoading] = useState(false);
   const contractProcessor = useWeb3ExecuteFunction();
-  const contractABIJson = JSON.parse(contractABI);
+  const contractABIJson = JSON.parse(marketPlaceBoilerABI);
   const listItemFunction = "createMarketItem";
   const ItemImage = Moralis.Object.extend("ItemImages");
 
-  async function list(nft, listPrice) {
+  async function list(nft, listPrice,v,r,s,nounce) {
+    
+    console.log(nft.token_address);
+    console.log(nft.token_id);
+    console.log(String(listPrice));
+    console.log(nounce," ",v," ",s," ",r," ");
     setLoading(true);
-    const p = listPrice * ("1e" + 18);
     const ops = {
-      contractAddress: marketAddress,
+      contractAddress: marketPlaceBoilerAddress,
       functionName: listItemFunction,
-      abi: contractABIJson,
+      abi: JSON.parse(marketPlaceBoilerABI),
       params: {
         nftContract: nft.token_address,
         tokenId: nft.token_id,
-        price: String(p),
+        price: listPrice,
+        NFTtype: String(nft.contract_type),
+        nounce:nounce,
+        r:v,
+        v:String(r),
+        s:String(s)
       },
     };
-
+    
     await contractProcessor.fetch({
       params: ops,
       onSuccess: () => {
@@ -57,25 +67,57 @@ function NFTBalance() {
         succList();
       },
       onError: (error) => {
+        console.log(error);
         setLoading(false);
         failList();
       },
     });
   }
 
-
+  async function authenticate(nft, listPrice){
+    let nounce= Math.floor(Math.random() * 1000000000);
+    let message="Nounce: "+nounce +" Hello You Are About to sign a transaction ";
+    
+    var user = await Moralis.Web3.authenticate({ signingMessage: message });
+    let signature= user.get("authData");
+    let sig=signature.moralisEth.signature
+    console.log(sig);
+    let signaturenew = sig.slice(2, 132)
+    var r = `${sig.slice(0, 64)}`
+    var s = `0x${sig.slice(64, 128)}`
+    var v =  parseInt(sig.slice(128, 130), 16) %2 + 27;
+    console.log(r,"r");
+    console.log(s,"s");
+    console.log(v,"v");
+    list(nft,listPrice,v,r,s,nounce);
+  }
   async function approveAll(nft) {
     setLoading(true);
-    const ops = {
+    let ops='';
+    console.log(nft.contract_type);
+    if(nft.contract_type=="ERC1155"){
+      console.log("ERC1155 For approval");
+      ops = {
+        contractAddress: nft.token_address,
+        functionName: "setApprovalForAll",
+        abi: [{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"}],
+        params: {
+          operator: marketPlaceBoilerAddress,
+          approved: true
+        },
+      };
+    }else{ 
+      console.log("ERC721 For approval");
+     ops = {
       contractAddress: nft.token_address,
-      functionName: "setApprovalForAll",
-      abi: [{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"}],
+      functionName: "approve",
+      abi: JSON.parse(ERC721ABI),
       params: {
-        operator: marketAddress,
-        approved: true
+        to: marketAddress,
+        tokenId: nft.token_id
       },
     };
-
+  }
     await contractProcessor.fetch({
       params: ops,
       onSuccess: () => {
@@ -85,6 +127,7 @@ function NFTBalance() {
         succApprove();
       },
       onError: (error) => {
+        console.log(error);
         setLoading(false);
         failApprove();
       },
@@ -212,7 +255,7 @@ function NFTBalance() {
         title={`List ${nftToSend?.name} #${nftToSend?.token_id} For Sale`}
         visible={visible}
         onCancel={() => setVisibility(false)}
-        onOk={() => list(nftToSend, price)}
+        onOk={() => authenticate(nftToSend, price)}
         okText="List"
         footer={[
           <Button onClick={() => setVisibility(false)}>
@@ -221,11 +264,11 @@ function NFTBalance() {
           <Button onClick={() => approveAll(nftToSend)} type="primary">
             Approve
           </Button>,
-          <Button onClick={() => list(nftToSend, price)} type="primary">
+          <Button onClick={() => authenticate(nftToSend, price)} type="primary">
             List
           </Button>
         ]}
-      >
+      > 
         <Spin spinning={loading}>
           <img
             src={`${nftToSend?.image}`}
@@ -238,7 +281,7 @@ function NFTBalance() {
           />
           <Input
             autoFocus
-            placeholder="Listing Price in ETH or ARKE"
+            placeholder="Listing Price in DEMO"
             onChange={(e) => setPrice(e.target.value)}
           />
         </Spin>
