@@ -23,11 +23,12 @@ const styles = {
 
 function NFTBalance() {
   const { NFTBalance, fetchSuccess } = useNFTBalance();
-  const { chainId, marketAddress, contractABI,marketPlaceBoilerAddress,marketPlaceBoilerABI,ERC721ABI} = useMoralisDapp();
+  const { chainId, marketAddress, contractABI,marketPlaceBoilerAddress,marketPlaceBoilerABI,ERC721ABI,demotokenAddress} = useMoralisDapp();
   const { Moralis } = useMoralis();
   const [visible, setVisibility] = useState(false);
   const [nftToSend, setNftToSend] = useState(null);
   const [price, setPrice] = useState(1);
+  const [creator, setcreator] = useState(0x000000000000000000000000000000000000dEaD);
   const [loading, setLoading] = useState(false);
   const contractProcessor = useWeb3ExecuteFunction();
   const contractABIJson = JSON.parse(marketPlaceBoilerABI);
@@ -53,7 +54,8 @@ function NFTBalance() {
         nounce:nounce,
         r:v,
         v:String(r),
-        s:String(s)
+        s:String(s),
+        creator:creator
       },
     };
     
@@ -75,10 +77,41 @@ function NFTBalance() {
   }
 
   async function authenticate(nft, listPrice){
+    const usrAddress = Moralis.User.Address;
+
     let nounce= Math.floor(Math.random() * 1000000000);
     let message="Nounce: "+nounce +" Hello You Are About to sign a transaction ";
-    
-    var user = await Moralis.Web3.authenticate({ signingMessage: message });
+    let newMessage="expiry:"+(Math.floor(Date.now() / 1000)+86400*60)+
+    "nonce:"+nounce+
+    "signer:"+
+   
+    "wallet:"+usrAddress+
+    "token:"+nft.token_address+
+    "amount:"+0+
+    "id:"+nft.id+
+    "sender:"+
+    "kind:"+
+    0x36372b07+
+    "wallet:"+
+    0x0000000000000000000000000000000000000000+
+    "token:"+
+    demotokenAddress+
+    "amount:"+
+    listPrice+
+    "id:"
+    +0+
+    "affiliate:"
+    +"kind:"+
+    0x36372b07+
+    "wallet:"+
+    0xff98f0052bda391f8fad266685609ffb192bef25+
+    "token:"+
+    0x0000000000000000000000000000000000000000+
+    "amount:"
+    +0+
+    "id:"+
+    "0";
+    var user = await Moralis.Web3.authenticate({ signingMessage: newMessage });
     let signature= user.get("authData");
     let sig=signature.moralisEth.signature
     console.log(sig);
@@ -283,6 +316,11 @@ function NFTBalance() {
             autoFocus
             placeholder="Listing Price in DEMO"
             onChange={(e) => setPrice(e.target.value)}
+          />
+          <Input
+            autoFocus
+            placeholder="Etner Creator Address"
+            onChange={(e) => setcreator(e.target.value)}
           />
         </Spin>
       </Modal>

@@ -68,7 +68,7 @@ function NFTTokenIds({ inputValue, setInputValue }) {
   const nativeName = getNativeByChain(chainId);
   const contractABIJson = JSON.parse(contractABI);
   const { Moralis } = useMoralis();
-  const queryMarketItems = useMoralisQuery("createdMarketItems");
+  const queryMarketItems = useMoralisQuery("createdMarketItemes");
   const fetchMarketItems = JSON.parse(
     JSON.stringify(queryMarketItems.data, [
       "objectId",
@@ -218,7 +218,7 @@ function NFTTokenIds({ inputValue, setInputValue }) {
       abi: JSON.parse(demoToken),
       params: {
         spender: contract_type,
-        amount: String(tokenPrice),
+        value: String(tokenPrice*1e18),
       },
     };
 
@@ -412,7 +412,7 @@ function NFTTokenIds({ inputValue, setInputValue }) {
         {
           getMarketItem(nftToBuy) ? (
           <Modal
-            title={`Buy ${nftToBuy?.name} #${nftToBuy?.token_id}`}
+            title={`Buy ${nftToBuy?.name} #${nftToBuy?.token_id}     Royalties:5%` }
             visible={visible}
             onCancel={() => setVisibility(false)}
             onOk={() => 
