@@ -28,7 +28,6 @@ function NFTBalance() {
   const [visible, setVisibility] = useState(false);
   const [nftToSend, setNftToSend] = useState(null);
   const [price, setPrice] = useState(1);
-  const [creator, setcreator] = useState(0x000000000000000000000000000000000000dEaD);
   const [loading, setLoading] = useState(false);
   const contractProcessor = useWeb3ExecuteFunction();
   const contractABIJson = JSON.parse(marketPlaceBoilerABI);
@@ -54,8 +53,7 @@ function NFTBalance() {
         nounce:nounce,
         r:v,
         v:String(r),
-        s:String(s),
-        creator:creator
+        s:String(s)
       },
     };
     
@@ -317,11 +315,7 @@ function NFTBalance() {
             placeholder="Listing Price in DEMO"
             onChange={(e) => setPrice(e.target.value)}
           />
-          <Input
-            autoFocus
-            placeholder="Etner Creator Address"
-            onChange={(e) => setcreator(e.target.value)}
-          />
+          
         </Spin>
       </Modal>
     </>
