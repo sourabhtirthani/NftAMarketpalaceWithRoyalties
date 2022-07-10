@@ -28,6 +28,7 @@ function NFTBalance() {
   const [visible, setVisibility] = useState(false);
   const [nftToSend, setNftToSend] = useState(null);
   const [price, setPrice] = useState(1);
+  const [disable, setDisable] = useState(true);
   const [loading, setLoading] = useState(false);
   const contractProcessor = useWeb3ExecuteFunction();
   const contractABIJson = JSON.parse(marketPlaceBoilerABI);
@@ -156,6 +157,7 @@ function NFTBalance() {
         setLoading(false);
         setVisibility(false);
         succApprove();
+        setDisable(false);
       },
       onError: (error) => {
         console.log(error);
@@ -295,7 +297,7 @@ function NFTBalance() {
           <Button onClick={() => approveAll(nftToSend)} type="primary">
             Approve
           </Button>,
-          <Button onClick={() => authenticate(nftToSend, price)} type="primary">
+          <Button disabled={disable} onClick={() => authenticate(nftToSend, price)} type="primary">
             List
           </Button>
         ]}
