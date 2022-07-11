@@ -288,7 +288,7 @@ function NFTTokenIds({ inputValue, setInputValue }) {
       (e) =>
         e.nftContract === nft?.token_address &&
         e.tokenId === nft?.token_id &&
-        e.sold === true 
+        e.sold === false 
     );
     
     return result;
