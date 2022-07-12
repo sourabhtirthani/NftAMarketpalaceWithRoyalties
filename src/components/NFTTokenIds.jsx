@@ -170,7 +170,6 @@ function NFTTokenIds({ inputValue, setInputValue }) {
       onSuccess: () => {
         console.log("success token transfer");
         setLoading(false);
-        approveToken(marketAddress);
         setVisibility(false);
         updateSoldMarketItem();
         succPurchase();
