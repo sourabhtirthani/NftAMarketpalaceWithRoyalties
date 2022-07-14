@@ -99,16 +99,6 @@ function NFTTokenIds({ inputValue, setInputValue }) {
     const nounce=tokenDetails.nounce_decimal;
 
     tokenPrice=tokenPrice*1000000000000000000;
-    console.log("nounce: ", tokenDetails.nounce)
-    console.log("expiry: ", (Math.floor(Date.now() / 1000)+86400*60))
-    console.log("signerWallet: ", owner)
-    console.log("signerToken: ", token)
-    console.log("signerID: ", itemID)
-    console.log("senderToken: ", demotokenAddress)
-    console.log("senderAmount: ", bigInt(tokenPrice).toString())
-    console.log("v",tokenDetails.v);
-    console.log("r",tokenDetails.r);
-    console.log("s",tokenDetails.s);
     const ops = {
       contractAddress: marketAddress,
       functionName: "buyNFT",
@@ -273,7 +263,9 @@ function NFTTokenIds({ inputValue, setInputValue }) {
 
   async function updateSoldMarketItem() {
     const id = getMarketItem(nftToBuy).objectId;
-    const marketList = Moralis.Object.extend("newCreatedMarketItem");
+    console.log("id",id)
+    const marketList = Moralis.Object.extend("MarketItmesnew");
+    console.log(marketList,"marketList");
     const query = new Moralis.Query(marketList);
     await query.get(id).then((obj) => {
       obj.set("sold", true);
